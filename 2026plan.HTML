@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2026工作规划矩阵 | 在线工具</title>
+  <!-- 引入外部依赖 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+  
+  <!-- Tailwind 配置 -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#165DFF',
+            secondary: '#8C8C8C',
+            success: '#52C41A',
+            warning: '#FAAD14',
+            danger: '#FF4D4F',
+            light: '#F5F7FA',
+            dark: '#1F2329',
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+        },
+      }
+    }
+  </script>
+  
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .cell-min-h {
+        min-height: 80px;
+      }
+      .table-fixed-layout {
+        table-layout: fixed;
+      }
+      .transition-all-200 {
+        transition: all 0.2s ease;
+      }
+      .compact-mode {
+        --cell-padding: 4px;
+        --font-size: 13px;
+        --min-width: 120px;
+      }
+      .normal-mode {
+        --cell-padding: 10px;
+        --font-size: 14px;
+        --min-width: 160px;
+      }
+      .dark-theme {
+        --bg-main: #1F2329;
+        --bg-card: #272B33;
+        --bg-hover: #303643;
+        --border-color: #434B5C;
+        --text-primary: #E5E6EB;
+        --text-secondary: #86909C;
+      }
+      .light-theme {
+        --bg-main: #F5F7FA;
+        --bg-card: #FFFFFF;
+        --bg-hover: #F0F7FF;
+        --border-color: #E8E8E8;
+        --text-primary: #1F2329;
+        --text-secondary: #8C8C8C;
+      }
+    }
+    
+    /* 基础样式 */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-primary);
+      font-size: var(--font-size);
+      transition: all 0.3s ease;
+    }
+    
+    .card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      transition: all 0.3s ease;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      min-width: 800px;
+    }
+    
+    th, td {
+      border: 1px solid var(--border-color);
+      padding: var(--cell-padding);
+      vertical-align: top;
+      min-width: var(--min-width);
+      transition: all 0.2s ease;
+    }
+    
+    th {
+      background-color: var(--bg-hover);
+      font-weight: 600;
+      text-align: center;
+    }
+    
+    .editable-text {
+      outline: none;
+      border-radius: 4px;
+      padding: 2px 4px;
+      transition: background-color 0.2s ease;
+    }
+    
+    .editable-text:hover {
+      background-color: var(--bg-hover);
+    }
+    
+    .action-btn {
+      border: none;
+      background: none;
+      cursor: pointer;
+      padding: 0 4px;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+    }
+    
+    .move-btn {
+      color: var(--text-secondary);
+    }
+    
+    .move-btn:hover {
+      color: var(--primary);
+      background-color: var(--bg-hover);
+    }
+    
+    .delete-btn {
+      color: var(--text-secondary);
+    }
+    
+    .delete-btn:hover {
+      color: var(--danger);
+      background-color: var(--bg-hover);
+    }
+    
+    .add-btn {
+      background-color: var(--bg-hover);
+      border: 1px dashed var(--border-color);
+      color: var(--text-secondary);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .add-btn:hover {
+      background-color: rgba(22, 93, 255, 0.1);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+    
+    .product-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 6px;
+      border-radius: 4px;
+      margin: 2px 0;
+      transition: all 0.2s ease;
+    }
+    
+    .color-select {
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      padding: 2px 4px;
+      cursor: pointer;
+      background-color: var(--bg-card);
+      color: var(--text-primary);
+    }
+    
+    .save-toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: var(--success);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 4px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      z-index: 9999;
+    }
+    
+    .save-toast.show {
+      opacity: 1;
+    }
+    
+    .status-tag {
+      padding: 6px 10px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+    }
+    
+    .status-color-picker {
+      width: 20px;
+      height: 20px;
+      border-radius: 3px;
+      cursor: pointer;
+      border: 1px solid var(--border-color);
+    }
+    
+    .theme-switcher {
+      position: relative;
+      width: 40px;
+      height: 20px;
+      background-color: var(--border-color);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .theme-switcher::after {
+      content: '';
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background-color: var(--bg-card);
+      top: 2px;
+      left: 2px;
+      transition: all 0.2s ease;
+    }
+    
+    .theme-switcher.dark::after {
+      left: 22px;
+      background-color: #1F2329;
+    }
+    
+    /* 打印样式 */
+    @media print {
+      .no-print {
+        display: none !important;
+      }
+      body {
+        background-color: white;
+        color: black;
+      }
+      .card {
+        box-shadow: none;
+        border: none;
+      }
+      th, td {
+        border: 1px solid #ccc;
+        color: black;
+      }
+    }
+  </style>
+</head>
+
+<body class="light-theme normal-mode">
+  <!-- 顶部导航栏 -->
+  <header class="card px-6 py-4 mb-4 flex justify-between items-center no-print">
+    <h1 class="text-xl font-bold text-primary editable-text" contenteditable id="page-title">2026年工作规划矩阵</h1>
+    <div class="flex gap-4 items-center">
+      <!-- 功能按钮组 -->
+      <div class="flex gap-2">
+        <button id="export-excel" class="action-btn text-primary hover:bg-blue-50 px-3 py-1 rounded">
+          <i class="fa fa-file-excel-o mr-1"></i>导出Excel
+        </button>
+        <button id="export-pdf" class="action-btn text-primary hover:bg-blue-50 px-3 py-1 rounded">
+          <i class="fa fa-file-pdf-o mr-1"></i>导出PDF
+        </button>
+        <button id="print-btn" class="action-btn text-primary hover:bg-blue-50 px-3 py-1 rounded">
+          <i class="fa fa-print mr-1"></i>打印
+        </button>
+        <button id="reset-btn" class="action-btn text-danger hover:bg-red-50 px-3 py-1 rounded">
+          <i class="fa fa-refresh mr-1"></i>重置
+        </button>
+      </div>
+      
+      <!-- 样式切换 -->
+      <div class="flex gap-3 items-center">
+        <button id="compact-mode" class="action-btn text-secondary hover:text-primary">
+          <i class="fa fa-compress"></i>
+        </button>
+        <div id="theme-toggle" class="theme-switcher"></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="max-w-7xl mx-auto px-4 pb-10">
+    <!-- 状态管理区 -->
+    <div class="card p-4 mb-4 flex flex-wrap gap-3 items-center justify-center no-print">
+      <span class="editable-text text-secondary whitespace-nowrap" contenteditable id="status-title">
+        状态标签管理（点击编辑/选色，+新增，×删除）：
+      </span>
+      
+      <div class="status-tag" data-key="plan" style="background-color: #e6f7ff;">
+        <input type="text" value="规划中" class="status-name-input editable-text bg-transparent w-20 text-center">
+        <input type="color" value="#e6f7ff" class="status-color-picker">
+        <button class="delete-btn" onclick="deleteStatus(this)">×</button>
+      </div>
+      
+      <div class="status-tag" data-key="doing" style="background-color: #fffbe6;">
+        <input type="text" value="进行中" class="status-name-input editable-text bg-transparent w-20 text-center">
+        <input type="color" value="#fffbe6" class="status-color-picker">
+        <button class="delete-btn" onclick="deleteStatus(this)">×</button>
+      </div>
+      
+      <div class="status-tag" data-key="done" style="background-color: #f6ffed;">
+        <input type="text" value="已完成" class="status-name-input editable-text bg-transparent w-20 text-center">
+        <input type="color" value="#f6ffed" class="status-color-picker">
+        <button class="delete-btn" onclick="deleteStatus(this)">×</button>
+      </div>
+      
+      <div class="status-tag" data-key="risk" style="background-color: #fff2f0;">
+        <input type="text" value="高风险" class="status-name-input editable-text bg-transparent w-20 text-center">
+        <input type="color" value="#fff2f0" class="status-color-picker">
+        <button class="delete-btn" onclick="deleteStatus(this)">×</button>
+      </div>
+      
+      <button class="add-btn px-3 py-1" onclick="addNewStatus()">+ 新增状态</button>
+    </div>
+
+    <!-- 提示文本 -->
+    <p class="text-center text-secondary mb-4 editable-text" contenteditable id="bottom-tip">
+      右侧+号加列，底部+号加行，所有操作自动云端保存，支持导出/打印/换肤
+    </p>
+
+    <!-- 表格区域 -->
+    <div class="card overflow-x-auto">
+      <table id="matrix">
+        <thead>
+          <tr id="header-row">
+            <th contenteditable id="first-col-header" class="editable-text">策略类别</th>
+            <th class="add-col-cell add-btn" onclick="addCol()">+</th>
+          </tr>
+        </thead>
+        <tbody id="body-area">
+          <tr class="add-row-row">
+            <th class="add-row-cell add-btn" onclick="addRow()">+</th>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 保存提示 -->
+  <div class="save-toast" id="saveToast">已保存到云端 ✔</div>
+
+  <script>
+    // ====================== 核心配置 ======================
+    const STORAGE_KEY = 'matrix_2026_cloud';
+    let isDarkTheme = false;
+    let isCompactMode = false;
+    
+    // ====================== 工具函数 ======================
+    function $(selector) { return document.querySelectorAll(selector); }
+    function $1(selector) { return document.querySelector(selector); }
+    
+    // 显示提示
+    function showToast(message = '操作成功') {
+      const toast = $1('#saveToast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2000);
+    }
+    
+    // ====================== 主题/模式切换 ======================
+    function initTheme() {
+      // 从本地存储加载主题设置
+      const savedTheme = localStorage.getItem('matrix_theme');
+      const savedCompact = localStorage.getItem('matrix_compact');
+      
+      isDarkTheme = savedTheme === 'dark';
+      isCompactMode = savedCompact === 'true';
+      
+      updateTheme();
+      updateCompactMode();
+      
+      // 绑定主题切换事件
+      $1('#theme-toggle').addEventListener('click', () => {
+        isDarkTheme = !isDarkTheme;
+        localStorage.setItem('matrix_theme', isDarkTheme ? 'dark' : 'light');
+        updateTheme();
+      });
+      
+      // 绑定紧凑模式切换
+      $1('#compact-mode').addEventListener('click', () => {
+        isCompactMode = !isCompactMode;
+        localStorage.setItem('matrix_compact', isCompactMode);
+        updateCompactMode();
+        showToast(isCompactMode ? '已切换紧凑模式' : '已切换正常模式');
+      });
+    }
+    
+    function updateTheme() {
+      const body = document.body;
+      const toggle = $1('#theme-toggle');
+      
+      if (isDarkTheme) {
+        body.classList.remove('light-theme');
+        body.classList.add('dark-theme');
+        toggle.classList.add('dark');
+      } else {
+        body.classList.remove('dark-theme');
+        body.classList.add('light-theme');
+        toggle.classList.remove('dark');
+      }
+    }
+    
+    function updateCompactMode() {
+      const body = document.body;
+      const btn = $1('#compact-mode');
+      
+      if (isCompactMode) {
+        body.classList.remove('normal-mode');
+        body.classList.add('compact-mode');
+        btn.innerHTML = '<i class="fa fa-expand"></i>';
+      } else {
+        body.classList.remove('compact-mode');
+        body.classList.add('normal-mode');
+        btn.innerHTML = '<i class="fa fa-compress"></i>';
+      }
+    }
+    
+    // ====================== 状态管理 ======================
+    function getStatusConfig() {
+      const config = {};
+      $('.status-tag').forEach(tag => {
+        const key = tag.dataset.key || 'status_' + Date.now();
+        const name = tag.querySelector('.status-name-input').value.trim() || '新状态';
+        const color = tag.querySelector('.status-color-picker').value;
+        config[key] = { name, color };
+      });
+      return config;
+    }
+    
+    function updateAllStatusSelects() {
+      const statusConfig = getStatusConfig();
+      $('.color-select').forEach(sel => {
+        const currentValue = sel.value;
+        sel.innerHTML = '';
+        
+        Object.keys(statusConfig).forEach(key => {
+          const option = document.createElement('option');
+          option.value = key;
+          option.textContent = statusConfig[key].name;
+          option.style.backgroundColor = statusConfig[key].color;
+          sel.appendChild(option);
+        });
+        
+        if (currentValue && statusConfig[currentValue]) {
+          sel.value = currentValue;
+        } else if (Object.keys(statusConfig).length > 0) {
+          sel.value = Object.keys(statusConfig)[0];
+        }
+        
+        if (sel.parentElement?.classList.contains('product-item')) {
+          sel.parentElement.style.backgroundColor = statusConfig[sel.value]?.color || 'var(--bg-hover)';
+        }
+      });
+    }
+    
+    function addNewStatus(name = '新状态', color = '#e0e0e0', key = '', save = true) {
+      const container = $1('.status-manager') || $1('.card.flex');
+      const btn = $1('.add-status-btn');
+      
+      const tag = document.createElement('div');
+      tag.className = 'status-tag';
+      tag.dataset.key = key || 'status_' + Date.now();
+      tag.style.backgroundColor = color;
+      
+      tag.innerHTML = `
+        <input type="text" value="${name}" class="status-name-input editable-text bg-transparent w-20 text-center">
+        <input type="color" value="${color}" class="status-color-picker">
+        <button class="delete-btn" onclick="deleteStatus(this)">×</button>
+      `;
+      
+      container.insertBefore(tag, btn);
+      
+      // 绑定事件
+      tag.querySelector('.status-name-input').addEventListener('input', () => {
+        updateAllStatusSelects();
+        saveAll();
+      });
+      
+      tag.querySelector('.status-color-picker').addEventListener('input', (e) => {
+        tag.style.backgroundColor = e.target.value;
+        updateAllStatusSelects();
+        saveAll();
+      });
+      
+      updateAllStatusSelects();
+      if (save) saveAll();
+    }
+    
+    function deleteStatus(btn) {
+      if ($('.status-tag').length <= 1) {
+        showToast('至少保留一个状态！');
+        return;
+      }
+      
+      if (confirm('确定删除此状态？使用该状态的项目会自动切换为第一个状态')) {
+        btn.parentElement.remove();
+        updateAllStatusSelects();
+        saveAll();
+      }
+    }
+    
+    // ====================== 数据保存/加载（云端逻辑） ======================
+    async function saveAll() {
+      try {
+        const saveData = {
+          version: '1.0.0',
+          updateTime: new Date().toISOString(),
+          title: $1('#page-title').innerText.trim() || '2026年工作规划矩阵',
+          statusTitle: $1('#status-title').innerText.trim() || '状态标签管理：',
+          tip: $1('#bottom-tip').innerText.trim() || '自动云端保存',
+          statusConfig: getStatusConfig(),
+          columns: [],
+          rows: [],
+          cellData: []
+        };
+        
+        // 保存列数据
+        const headerCells = $1('#header-row').querySelectorAll('th:not(.add-col-cell)');
+        headerCells.forEach((cell, index) => {
+          if (index === 0) {
+            saveData.columns.push({
+              type: 'header',
+              text: cell.innerText.trim() || '策略类别'
+            });
+          } else {
+            const textEl = cell.querySelector('.header-text');
+            saveData.columns.push({
+              type: 'data',
+              text: textEl ? textEl.innerText.trim() : '新列'
+            });
+          }
+        });
+        
+        // 保存行数据
+        const bodyRows = $1('#body-area').querySelectorAll('tr:not(.add-row-row)');
+        bodyRows.forEach((row, rowIndex) => {
+          // 行标题
+          const th = row.querySelector('th');
+          const textEl = th.querySelector('.header-text');
+          saveData.rows.push({
+            text: textEl ? textEl.innerText.trim() : '新行'
+          });
+          
+          // 单元格数据
+          const rowData = [];
+          const tds = row.querySelectorAll('td');
+          tds.forEach((td, colIndex) => {
+            const items = [];
+            td.querySelectorAll('.product-item').forEach(item => {
+              const nameEl = item.querySelector('.product-name');
+              const statusEl = item.querySelector('.color-select');
+              
+              items.push({
+                name: nameEl ? nameEl.innerText.trim() : '新项目',
+                status: statusEl ? statusEl.value : Object.keys(saveData.statusConfig)[0] || 'plan'
+              });
+            });
+            rowData.push(items);
+          });
+          saveData.cellData.push(rowData);
+        });
+        
+        // 保存到本地存储（模拟云端）
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(saveData));
+        
+        // 可选：如果需要真正的云端存储，可以在这里添加API调用
+        // await fetch('https://your-api.com/save', {
+        //   method: 'POST',
+        //   body: JSON.stringify(saveData),
+        //   headers: { 'Content-Type': 'application/json' }
+        // });
+        
+        showToast('已保存到云端 ✔');
+      } catch (e) {
+        console.error('保存失败:', e);
+        showToast('保存失败！');
+      }
+    }
+    
+    async function loadAll() {
+      try {
+        // 从本地存储加载（模拟云端）
+        const savedStr = localStorage.getItem(STORAGE_KEY);
+        
+        // 可选：从真正的云端加载
+        // const res = await fetch('https://your-api.com/load');
+        // const savedStr = await res.text();
+        
+        if (!savedStr) {
+          initDefaultColumn();
+          initDefaultRow();
+          return;
+        }
+        
+        const saveData = JSON.parse(savedStr);
+        const headerRow = $1('#header-row');
+        const bodyArea = $1('#body-area');
+        
+        // 清空现有结构
+        const headerCells = headerRow.querySelectorAll('th:not(.add-col-cell):not(#first-col-header)');
+        headerCells.forEach(cell => cell.remove());
+        
+        const bodyRows = bodyArea.querySelectorAll('tr:not(.add-row-row)');
+        bodyRows.forEach(row => row.remove());
+        
+        // 恢复基础文本
+        $1('#page-title').innerText = saveData.title;
+        $1('#status-title').innerText = saveData.statusTitle;
+        $1('#bottom-tip').innerText = saveData.tip;
+        
+        // 恢复状态配置
+        if (saveData.statusConfig && Object.keys(saveData.statusConfig).length > 0) {
+          $('.status-tag').forEach(tag => tag.remove());
+          
+          Object.keys(saveData.statusConfig).forEach(key => {
+            const status = saveData.statusConfig[key];
+            addNewStatus(status.name, status.color, key, false);
+          });
+        }
+        
+        // 恢复列
+        if (saveData.columns && saveData.columns.length > 0) {
+          saveData.columns.forEach((col, index) => {
+            if (index === 0) {
+              $1('#first-col-header').innerText = col.text;
+            } else if (col.type === 'data') {
+              addCol(col.text, false);
+            }
+          });
+        } else {
+          initDefaultColumn();
+        }
+        
+        // 恢复行和单元格数据
+        if (saveData.rows && saveData.rows.length > 0) {
+          saveData.rows.forEach((row, rowIndex) => {
+            addRow(row.text, false);
+            
+            const rowData = saveData.cellData[rowIndex] || [];
+            const bodyRows = bodyArea.querySelectorAll('tr:not(.add-row-row)');
+            const currentRow = bodyRows[rowIndex];
+            
+            if (currentRow) {
+              const tds = currentRow.querySelectorAll('td');
+              rowData.forEach((cellItems, colIndex) => {
+                if (tds[colIndex]) {
+                  const cellContent = tds[colIndex].querySelector('.cell-content');
+                  const addBtn = cellContent.querySelector('.add-btn');
+                  
+                  cellItems.forEach(item => {
+                    addItem(addBtn, item.name, item.status, false);
+                  });
+                }
+              });
+            }
+          });
+        } else {
+          initDefaultRow();
+        }
+        
+        updateAllStatusSelects();
+        setTimeout(() => saveAll(), 500);
+      } catch (e) {
+        console.error('加载失败:', e);
+        showToast('加载失败，使用默认配置');
+        initDefaultColumn();
+        initDefaultRow();
+      }
+    }
+    
+    // ====================== 表格操作 ======================
+    function initDefaultColumn() {
+      const dataCols = $1('#header-row').querySelectorAll('th.data-col');
+      if (dataCols.length === 0) {
+        addCol('2026-03', false);
+      }
+    }
+    
+    function initDefaultRow() {
+      const dataRows = $1('#body-area').querySelectorAll('tr:not(.add-row-row)');
+      if (dataRows.length === 0) {
+        addRow('策略名称', false);
+      }
+    }
+    
+    function addItem(btn, name = '新项目', statusKey = '', save = true) {
+      const container = btn.parentElement;
+      const statusConfig = getStatusConfig();
+      const defaultStatus = statusKey || Object.keys(statusConfig)[0] || 'plan';
+      
+      const item = document.createElement('div');
+      item.className = 'product-item';
+      item.style.backgroundColor = statusConfig[defaultStatus]?.color || 'var(--bg-hover)';
+      
+      let selectHtml = '<select class="color-select" onchange="updateItemColor(this);saveAll()">';
+      Object.keys(statusConfig).forEach(key => {
+        selectHtml += `
+          <option value="${key}" ${key === defaultStatus ? 'selected' : ''} style="background:${statusConfig[key].color}">
+            ${statusConfig[key].name}
+          </option>
+        `;
+      });
+      selectHtml += '</select>';
+      
+      item.innerHTML = `
+        <span class="product-name editable-text flex-1" contenteditable>${name}</span>
+        ${selectHtml}
+        <button class="delete-btn" onclick="this.parentElement.remove();saveAll()">×</button>
+      `;
+      
+      container.insertBefore(item, btn);
+      item.querySelector('.product-name').addEventListener('blur', saveAll);
+      
+      if (save) saveAll();
+    }
+    
+    function updateItemColor(sel) {
+      const statusConfig = getStatusConfig();
+      sel.parentElement.style.backgroundColor = statusConfig[sel.value]?.color || 'var(--bg-hover)';
+    }
+    
+    function addCol(text = '新列', save = true) {
+      const headerRow = $1('#header-row');
+      const addColCell = headerRow.querySelector('.add-col-cell');
+      
+      // 添加表头列
+      const th = document.createElement('th');
+      th.className = 'data-col';
+      th.innerHTML = `
+        <span class="header-text editable-text" contenteditable>${text}</span>
+        <button class="move-btn ml-1" onclick="moveCol(this,-1)"><i class="fa fa-arrow-left"></i></button>
+        <button class="move-btn ml-1" onclick="moveCol(this,1)"><i class="fa fa-arrow-right"></i></button>
+        <button class="delete-btn ml-1" onclick="delCol(this)"><i class="fa fa-times"></i></button>
+      `;
+      
+      headerRow.insertBefore(th, addColCell);
+      
+      // 为所有行添加单元格
+      const bodyRows = $1('#body-area').querySelectorAll('tr');
+      bodyRows.forEach(row => {
+        if (row.classList.contains('add-row-row')) {
+          const td = document.createElement('td');
+          td.className = 'add-row-extra-cell hidden';
+          row.insertBefore(td, row.lastChild);
+        } else {
+          const td = document.createElement('td');
+          td.innerHTML = `
+            <div class="cell-content cell-min-h flex flex-col gap-2">
+              <button class="add-btn px-2 py-1" onclick="addItem(this)">+ 添加项目</button>
+            </div>
+          `;
+          row.appendChild(td);
+        }
+      });
+      
+      if (save) saveAll();
+    }
+    
+    function moveCol(btn, direction) {
+      const th = btn.closest('th');
+      const headerRow = $1('#header-row');
+      const cells = Array.from(headerRow.querySelectorAll('th:not(.add-col-cell)'));
+      const index = cells.indexOf(th);
+      
+      if ((index <= 0 && direction === -1) || (index >= cells.length - 1 && direction === 1)) {
+        return;
+      }
+      
+      const targetIndex = index + direction;
+      const targetCell = cells[targetIndex];
+      
+      if (direction === -1) {
+        headerRow.insertBefore(th, targetCell);
+      } else {
+        headerRow.insertBefore(targetCell, th);
+      }
+      
+      // 移动所有行的单元格
+      const bodyRows = $1('#body-area').querySelectorAll('tr');
+      bodyRows.forEach(row => {
+        const tds = Array.from(row.querySelectorAll('td'));
+        if (tds[index] && tds[targetIndex]) {
+          if (direction === -1) {
+            row.insertBefore(tds[index], tds[targetIndex]);
+          } else {
+            row.insertBefore(tds[targetIndex], tds[index]);
+          }
+        }
+      });
+      
+      saveAll();
+    }
+    
+    function delCol(btn) {
+      const th = btn.closest('th');
+      const headerRow = $1('#header-row');
+      const cells = headerRow.querySelectorAll('th:not(.add-col-cell)');
+      
+      if (cells.length <= 1) {
+        showToast('至少保留一列数据！');
+        return;
+      }
+      
+      if (confirm('确定删除此列？列内所有项目都会被删除！')) {
+        const index = Array.from(headerRow.children).indexOf(th);
+        th.remove();
+        
+        // 删除对应单元格
+        const bodyRows = $1('#body-area').querySelectorAll('tr');
+        bodyRows.forEach(row => {
+          const tds = row.querySelectorAll('td');
+          if (tds[index - 1]) tds[index - 1].remove();
+        });
+        
+        saveAll();
+      }
+    }
+    
+    function addRow(text = '新行', save = true) {
+      const bodyArea = $1('#body-area');
+      const addRowRow = bodyArea.querySelector('.add-row-row');
+      const headerRow = $1('#header-row');
+      const colCount = headerRow.querySelectorAll('th:not(.add-col-cell)').length;
+      
+      const tr = document.createElement('tr');
+      let html = `
+        <th>
+          <span class="header-text editable-text" contenteditable>${text}</span>
+          <button class="move-btn ml-1" onclick="moveRow(this,-1)"><i class="fa fa-arrow-up"></i></button>
+          <button class="move-btn ml-1" onclick="moveRow(this,1)"><i class="fa fa-arrow-down"></i></button>
+          <button class="delete-btn ml-1" onclick="delRow(this)"><i class="fa fa-times"></i></button>
+        </th>
+      `;
+      
+      // 创建单元格
+      for (let i = 1; i < colCount; i++) {
+        html += `
+          <td>
+            <div class="cell-content cell-min-h flex flex-col gap-2">
+              <button class="add-btn px-2 py-1" onclick="addItem(this)">+ 添加项目</button>
+            </div>
+          </td>
+        `;
+      }
+      
+      tr.innerHTML = html;
+      bodyArea.insertBefore(tr, addRowRow);
+      
+      if (save) saveAll();
+    }
+    
+    function moveRow(btn, direction) {
+      const th = btn.closest('th');
+      const tr = th.parentElement;
+      const bodyArea = $1('#body-area');
+      const rows = Array.from(bodyArea.querySelectorAll('tr:not(.add-row-row)'));
+      const index = rows.indexOf(tr);
+      
+      if ((index <= 0 && direction === -1) || (index >= rows.length - 1 && direction === 1)) {
+        return;
+      }
+      
+      const targetRow = rows[index + direction];
+      if (direction === -1) {
+        bodyArea.insertBefore(tr, targetRow);
+      } else {
+        bodyArea.insertBefore(targetRow, tr);
+      }
+      
+      saveAll();
+    }
+    
+    function delRow(btn) {
+      const tr = btn.closest('tr');
+      const bodyArea = $1('#body-area');
+      const rows = bodyArea.querySelectorAll('tr:not(.add-row-row)');
+      
+      if (rows.length <= 1) {
+        showToast('至少保留一行数据！');
+        return;
+      }
+      
+      if (confirm('确定删除此行？行内所有项目都会被删除！')) {
+        tr.remove();
+        saveAll();
+      }
+    }
+    
+    // ====================== 导出/打印功能 ======================
+    function initExportPrint() {
+      // 导出Excel
+      $1('#export-excel').addEventListener('click', () => {
+        try {
+          const wb = XLSX.utils.book_new();
+          const wsData = [];
+          
+          // 表头
+          const headerCells = $1('#header-row').querySelectorAll('th:not(.add-col-cell)');
+          const headerRow = [];
+          headerCells.forEach(cell => {
+            if (cell.id === 'first-col-header') {
+              headerRow.push(cell.innerText.trim());
+            } else {
+              const textEl = cell.querySelector('.header-text');
+              headerRow.push(textEl ? textEl.innerText.trim() : '');
+            }
+          });
+          wsData.push(headerRow);
+          
+          // 内容行
+          const bodyRows = $1('#body-area').querySelectorAll('tr:not(.add-row-row)');
+          bodyRows.forEach(row => {
+            const rowData = [];
+            
+            // 行标题
+            const th = row.querySelector('th');
+            const textEl = th.querySelector('.header-text');
+            rowData.push(textEl ? textEl.innerText.trim() : '');
+            
+            // 单元格内容
+            const tds = row.querySelectorAll('td');
+            tds.forEach(td => {
+              const items = [];
+              td.querySelectorAll('.product-item').forEach(item => {
+                const nameEl = item.querySelector('.product-name');
+                const statusEl = item.querySelector('.color-select');
+                const statusConfig = getStatusConfig();
+                
+                const name = nameEl ? nameEl.innerText.trim() : '';
+                const statusName = statusConfig[statusEl?.value]?.name || '';
+                
+                items.push(`${name}(${statusName})`);
+              });
+              rowData.push(items.join('; '));
+            });
+            
+            wsData.push(rowData);
+          });
+          
+          // 创建工作表
+          const ws = XLSX.utils.aoa_to_sheet(wsData);
+          XLSX.utils.book_append_sheet(wb, ws, '工作规划');
+          
+          // 导出文件
+          const fileName = `${$1('#page-title').innerText.trim() || '工作规划'}_${new Date().toLocaleDateString()}.xlsx`;
+          XLSX.writeFile(wb, fileName);
+          
+          showToast('Excel导出成功！');
+        } catch (e) {
+          console.error('导出Excel失败:', e);
+          showToast('Excel导出失败！');
+        }
+      });
+      
+      // 导出PDF
+      $1('#export-pdf').addEventListener('click', () => {
+        try {
+          const opt = {
+            margin: 10,
+            filename: `${$1('#page-title').innerText.trim() || '工作规划'}_${new Date().toLocaleDateString()}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+          };
+          
+          // 导出表格区域
+          html2pdf().set(opt).from($1('.card.overflow-x-auto')).save();
+          showToast('PDF导出中，请稍候...');
+        } catch (e) {
+          console.error('导出PDF失败:', e);
+          showToast('PDF导出失败！');
+        }
+      });
+      
+      // 打印功能
+      $1('#print-btn').addEventListener('click', () => {
+        window.print();
+        showToast('打印预览已打开');
+      });
+      
+      // 重置功能
+      $1('#reset-btn').addEventListener('click', () => {
+        if (confirm('确定要重置所有数据吗？此操作不可恢复！')) {
+          localStorage.removeItem(STORAGE_KEY);
+          location.reload();
+        }
+      });
+    }
+    
+    // ====================== 初始化 ======================
+    window.addEventListener('load', () => {
+      // 初始化主题
+      initTheme();
+      
+      // 初始化导出/打印
+      initExportPrint();
+      
+      // 加载数据
+      loadAll();
+      
+      // 绑定编辑事件
+      $('#page-title,#status-title,#bottom-tip,#first-col-header').forEach(el => {
+        el.addEventListener('blur', saveAll);
+      });
+      
+      // 状态编辑事件
+      $('.status-name-input').forEach(input => {
+        input.addEventListener('input', () => {
+          updateAllStatusSelects();
+          saveAll();
+        });
+      });
+      
+      $('.status-color-picker').forEach(picker => {
+        picker.addEventListener('input', (e) => {
+          picker.parentElement.style.backgroundColor = e.target.value;
+          updateAllStatusSelects();
+          saveAll();
+        });
+      });
+      
+      // 全局编辑事件
+      document.addEventListener('blur', (e) => {
+        if (e.target.classList.contains('header-text') || e.target.classList.contains('product-name')) {
+          saveAll();
+        }
+      });
+      
+      // 初始化状态选择器
+      updateAllStatusSelects();
+    });
+  </script>
+</body>
+</html>
